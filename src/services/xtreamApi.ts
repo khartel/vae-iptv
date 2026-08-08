@@ -1,4 +1,9 @@
-import type { XtreamAuthResponse, XtreamCredentials } from '../types/xtream'
+import type {
+  XtreamAuthResponse,
+  XtreamCredentials,
+  XtreamLiveCategory,
+  XtreamLiveStream,
+} from '../types/xtream'
 
 export type XtreamErrorKind = 'network' | 'auth' | 'parse'
 
@@ -24,12 +29,40 @@ export function getEnvCredentials(): XtreamCredentials {
   }
 }
 
-function buildAuthUrl(credentials: XtreamCredentials): string {
+function buildApiUrl(
+  credentials: XtreamCredentials,
+  extraParams: Record<string, string> = {},
+): string {
   const params = new URLSearchParams({
     username: credentials.username,
     password: credentials.password,
+    ...extraParams,
   })
   return `${credentials.serverUrl}/player_api.php?${params.toString()}`
+}
+
+/** Fetches a player_api.php URL and parses the JSON body, wrapping network and parse failures. */
+async function fetchXtreamJson(url: string): Promise<unknown> {
+  let response: Response
+  try {
+    response = await fetch(url)
+  } catch (error) {
+    throw new XtreamApiError(
+      'network',
+      'Could not reach the IPTV server. Check the server URL and your network connection.',
+      { cause: error },
+    )
+  }
+
+  try {
+    return await response.json()
+  } catch (error) {
+    throw new XtreamApiError(
+      'parse',
+      'The server returned a response that was not valid JSON.',
+      { cause: error },
+    )
+  }
 }
 
 function hasUserInfo(
@@ -58,27 +91,7 @@ function isXtreamAuthResponse(data: unknown): data is XtreamAuthResponse {
 export async function login(
   credentials: XtreamCredentials = getEnvCredentials(),
 ): Promise<XtreamAuthResponse> {
-  let response: Response
-  try {
-    response = await fetch(buildAuthUrl(credentials))
-  } catch (error) {
-    throw new XtreamApiError(
-      'network',
-      'Could not reach the IPTV server. Check the server URL and your network connection.',
-      { cause: error },
-    )
-  }
-
-  let data: unknown
-  try {
-    data = await response.json()
-  } catch (error) {
-    throw new XtreamApiError(
-      'parse',
-      'The server returned a response that was not valid JSON.',
-      { cause: error },
-    )
-  }
+  const data = await fetchXtreamJson(buildApiUrl(credentials))
 
   // Check auth status before requiring the full response shape: this provider
   // (and Xtream panels generally) returns a bare `{"user_info":{"auth":0}}`
@@ -120,4 +133,49 @@ export async function validateConnection(
   } catch {
     return false
   }
+}
+
+export async function getLiveCategories(
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamLiveCategory[]> {
+  const url = buildApiUrl(credentials, { action: 'get_live_categories' })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of live categories but got something else.',
+    )
+  }
+
+  return data as XtreamLiveCategory[]
+}
+
+export async function getLiveStreams(
+  categoryId: string,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamLiveStream[]> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_live_streams',
+    category_id: categoryId,
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of live streams but got something else.',
+    )
+  }
+
+  return data as XtreamLiveStream[]
+}
+
+/** Builds a playable stream URL for a live channel, per Xtream's URL convention. */
+export function buildLiveStreamUrl(
+  streamId: number,
+  extension: 'm3u8' | 'ts',
+  credentials: XtreamCredentials = getEnvCredentials(),
+): string {
+  return `${credentials.serverUrl}/live/${credentials.username}/${credentials.password}/${streamId}.${extension}`
 }

@@ -33,3 +33,23 @@ export interface XtreamCredentials {
   username: string
   password: string
 }
+
+export interface XtreamLiveCategory {
+  category_id: string
+  category_name: string
+  parent_id: number
+}
+
+export interface XtreamLiveStream {
+  num: number
+  name: string
+  stream_type: string
+  stream_id: number
+  stream_icon: string
+  epg_channel_id: string | null
+  category_id: string
+  custom_sid: string | null
+  tv_archive: number
+  direct_source: string
+  tv_archive_duration: number
+}
