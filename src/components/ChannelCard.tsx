@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Heart, Radio } from 'lucide-react'
 import { useShortEpg } from '../hooks/useShortEpg'
 import type { XtreamLiveStream } from '../types/xtream'
 
@@ -32,14 +34,17 @@ export function ChannelCard({
   }
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onSelect}
       onMouseEnter={startHover}
       onMouseLeave={endHover}
       onFocus={startHover}
       onBlur={endHover}
-      className="group focus-visible:border-primary bg-surface-container relative aspect-video w-full overflow-hidden rounded-lg border-2 border-transparent text-left outline-none transition-all duration-200 hover:scale-[1.02] focus-visible:scale-105 focus-visible:shadow-[0_0_20px_rgba(192,193,255,0.3)]"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      className="group focus-visible:border-primary bg-surface-container relative aspect-video w-full overflow-hidden rounded-lg border-2 border-transparent text-left outline-none focus-visible:shadow-[0_0_20px_rgba(192,193,255,0.3)]"
     >
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
       {channel.stream_icon && (
@@ -56,12 +61,13 @@ export function ChannelCard({
       <div className="absolute inset-0 z-20 flex flex-col justify-between p-3">
         <div className="flex items-start justify-between">
           <span className="bg-error text-on-error flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase">
-            <span className="bg-on-error h-1.5 w-1.5 animate-pulse rounded-full" />
+            <Radio size={10} className="animate-pulse" />
             Live
           </span>
-          <span
+          <motion.span
             role="button"
             tabIndex={-1}
+            whileTap={{ scale: 0.8 }}
             onClick={(e) => {
               e.stopPropagation()
               onToggleFavorite()
@@ -72,25 +78,30 @@ export function ChannelCard({
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span
-              className="material-symbols-outlined text-[18px]"
-              style={{ fontVariationSettings: `'FILL' ${isFavorite ? 1 : 0}` }}
-            >
-              favorite
-            </span>
-          </span>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={isFavorite ? 'filled' : 'empty'}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                className="block"
+              >
+                <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+              </motion.span>
+            </AnimatePresence>
+          </motion.span>
         </div>
         <div>
           <h3 className="truncate text-sm font-semibold text-white">
             {channel.name}
           </h3>
           {epg.status === 'success' && epg.current && (
-            <p className="truncate text-xs text-on-surface-variant">
+            <p className="text-on-surface-variant truncate text-xs">
               {epg.current.title}
             </p>
           )}
         </div>
       </div>
-    </button>
+    </motion.button>
   )
 }

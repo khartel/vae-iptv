@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { motion, AnimatePresence } from 'motion/react'
+import {
+  ArrowLeft,
+  Clock,
+  SkipBack,
+  Play,
+  Pause,
+  SkipForward,
+  Heart,
+  X,
+} from 'lucide-react'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { buildLiveStreamUrl } from '../services/xtreamApi'
 import { useFavorites } from '../hooks/useFavorites'
@@ -99,11 +110,13 @@ export function PlayerPage() {
 
   if (!currentChannel) {
     return (
-      <main className="bg-background flex min-h-screen items-center justify-center text-on-surface-variant">
+      <main className="bg-background text-on-surface-variant flex min-h-screen items-center justify-center">
         No channel selected.
       </main>
     )
   }
+
+  const favorited = isFavorite(currentChannel.stream_id)
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
@@ -123,33 +136,28 @@ export function PlayerPage() {
         }`}
       >
         <header className="from-background pointer-events-auto flex items-center gap-4 bg-gradient-to-b to-transparent p-6">
-          <button
+          <motion.button
             type="button"
             onClick={() => navigate(-1)}
-            className="hover:text-primary rounded-full p-2 text-on-surface-variant outline-none transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="hover:text-primary text-on-surface-variant rounded-full p-2 outline-none transition-colors"
             aria-label="Back"
           >
-            <span className="material-symbols-outlined text-[28px]">
-              arrow_back
-            </span>
-          </button>
+            <ArrowLeft size={26} />
+          </motion.button>
           <span className="text-body-md font-semibold">
             {currentChannel.name}
           </span>
 
           {epg.status === 'success' && epg.next && (
             <div className="border-outline-variant/30 bg-surface-container/60 ml-auto flex items-center gap-4 rounded-xl border p-4 backdrop-blur-xl">
-              <span
-                className="material-symbols-outlined text-outline"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                schedule
-              </span>
+              <Clock size={20} className="text-outline" />
               <div>
                 <p className="text-label-caps text-outline">
                   UP NEXT • {formatTime(epg.next.start)}
                 </p>
-                <p className="text-body-md font-semibold text-on-surface">
+                <p className="text-body-md text-on-surface font-semibold">
                   {epg.next.title}
                 </p>
               </div>
@@ -160,7 +168,7 @@ export function PlayerPage() {
         <div className="from-background via-background/80 pointer-events-auto bg-gradient-to-t to-transparent px-6 pb-8">
           <div className="border-outline-variant/30 bg-surface-container/70 flex items-center justify-between rounded-2xl border p-4 backdrop-blur-xl">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="border-outline-variant/30 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-surface-container">
+              <div className="border-outline-variant/30 bg-surface-container flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border">
                 {currentChannel.stream_icon ? (
                   <img
                     src={currentChannel.stream_icon}
@@ -168,20 +176,20 @@ export function PlayerPage() {
                     className="h-full w-full object-contain p-1"
                   />
                 ) : (
-                  <span className="font-bold text-on-surface">
+                  <span className="text-on-surface font-bold">
                     {currentChannel.name.charAt(0)}
                   </span>
                 )}
               </div>
               <div className="min-w-0">
-                <span className="block truncate text-body-md font-semibold">
+                <span className="text-body-md block truncate font-semibold">
                   {currentChannel.name}
                 </span>
                 {epg.status === 'success' && epg.current && (
                   <button
                     type="button"
                     onClick={() => setShowDetail(true)}
-                    className="hover:text-on-surface block max-w-full truncate text-left text-sm text-on-surface-variant underline decoration-dotted outline-none"
+                    className="hover:text-on-surface text-on-surface-variant block max-w-full truncate text-left text-sm underline decoration-dotted outline-none"
                   >
                     {epg.current.title}
                   </button>
@@ -190,93 +198,102 @@ export function PlayerPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button
+              <motion.button
                 type="button"
                 onClick={() => goToIndex(index - 1)}
                 disabled={index <= 0}
+                whileHover={index > 0 ? { scale: 1.1 } : undefined}
+                whileTap={index > 0 ? { scale: 0.9 } : undefined}
                 aria-label="Previous channel"
-                className="rounded-full p-3 text-on-surface-variant outline-none transition-colors hover:text-on-surface disabled:opacity-30"
+                className="text-on-surface-variant hover:text-on-surface rounded-full p-3 outline-none transition-colors disabled:opacity-30"
               >
-                <span className="material-symbols-outlined text-[28px]">
-                  skip_previous
-                </span>
-              </button>
-              <button
+                <SkipBack size={24} fill="currentColor" />
+              </motion.button>
+              <motion.button
                 type="button"
                 onClick={togglePlayPause}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
-                className="bg-primary text-on-primary rounded-full p-4 shadow-[0_0_20px_rgba(192,193,255,0.3)] outline-none transition-transform hover:scale-105"
+                className="bg-primary text-on-primary rounded-full p-4 shadow-[0_0_20px_rgba(192,193,255,0.3)] outline-none"
               >
-                <span
-                  className="material-symbols-outlined text-[36px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  {isPlaying ? 'pause' : 'play_arrow'}
-                </span>
-              </button>
-              <button
+                {isPlaying ? (
+                  <Pause size={30} fill="currentColor" />
+                ) : (
+                  <Play size={30} fill="currentColor" />
+                )}
+              </motion.button>
+              <motion.button
                 type="button"
                 onClick={() => goToIndex(index + 1)}
                 disabled={index >= channels.length - 1}
+                whileHover={
+                  index < channels.length - 1 ? { scale: 1.1 } : undefined
+                }
+                whileTap={
+                  index < channels.length - 1 ? { scale: 0.9 } : undefined
+                }
                 aria-label="Next channel"
-                className="rounded-full p-3 text-on-surface-variant outline-none transition-colors hover:text-on-surface disabled:opacity-30"
+                className="text-on-surface-variant hover:text-on-surface rounded-full p-3 outline-none transition-colors disabled:opacity-30"
               >
-                <span className="material-symbols-outlined text-[28px]">
-                  skip_next
-                </span>
-              </button>
-              <button
+                <SkipForward size={24} fill="currentColor" />
+              </motion.button>
+              <motion.button
                 type="button"
-                onClick={() => toggleFavorite(currentChannel.stream_id)}
+                onClick={() => toggleFavorite(currentChannel)}
+                whileTap={{ scale: 0.85 }}
                 aria-label="Toggle favorite"
-                className={`rounded-xl p-3 outline-none transition-colors hover:bg-surface-container ${
-                  isFavorite(currentChannel.stream_id)
+                className={`rounded-xl p-3 outline-none transition-colors ${
+                  favorited
                     ? 'text-primary'
-                    : 'text-on-surface-variant'
+                    : 'text-on-surface-variant hover:bg-surface-container'
                 }`}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontVariationSettings: `'FILL' ${isFavorite(currentChannel.stream_id) ? 1 : 0}`,
-                  }}
-                >
-                  favorite
-                </span>
-              </button>
+                <Heart size={22} fill={favorited ? 'currentColor' : 'none'} />
+              </motion.button>
             </div>
           </div>
         </div>
       </div>
 
-      {showDetail && epg.status === 'success' && epg.current && (
-        <div
-          className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-6"
-          onClick={() => setShowDetail(false)}
-        >
-          <div
-            className="border-outline-variant/30 bg-surface-container max-w-lg rounded-2xl border p-6"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {showDetail && epg.status === 'success' && epg.current && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-6"
+            onClick={() => setShowDetail(false)}
           >
-            <p className="text-label-caps text-primary mb-1">
-              {formatTime(epg.current.start)} – {formatTime(epg.current.end)}
-            </p>
-            <h2 className="text-headline-md mb-3 font-bold">
-              {epg.current.title}
-            </h2>
-            <p className="text-on-surface-variant">
-              {epg.current.description || 'No description available.'}
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowDetail(false)}
-              className="bg-surface-container-high hover:bg-surface-bright mt-6 rounded-xl px-4 py-2 outline-none transition-colors"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              className="border-outline-variant/30 bg-surface-container relative max-w-lg rounded-2xl border p-6"
+              onClick={(e) => e.stopPropagation()}
             >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+              <button
+                type="button"
+                onClick={() => setShowDetail(false)}
+                aria-label="Close"
+                className="text-on-surface-variant hover:text-on-surface absolute top-4 right-4 outline-none"
+              >
+                <X size={20} />
+              </button>
+              <p className="text-label-caps text-primary mb-1">
+                {formatTime(epg.current.start)} – {formatTime(epg.current.end)}
+              </p>
+              <h2 className="text-headline-md mb-3 pr-6 font-bold">
+                {epg.current.title}
+              </h2>
+              <p className="text-on-surface-variant">
+                {epg.current.description || 'No description available.'}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }

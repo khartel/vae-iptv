@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { motion } from 'motion/react'
+import {
+  Tv,
+  Film,
+  Clapperboard,
+  Heart,
+  CalendarDays,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react'
 import { useAuth } from '../app/AuthContext'
 import { useLiveCategories } from '../hooks/useLiveCategories'
 import { useLiveStreams } from '../hooks/useLiveStreams'
@@ -26,30 +36,34 @@ function formatExpiration(expDate: string | null | undefined): string {
 }
 
 interface BigTileProps {
-  icon: string
+  icon: LucideIcon
   label: string
   to?: string
   colorClass: string
   disabled?: boolean
 }
 
-function BigTile({ icon, label, to, colorClass, disabled }: BigTileProps) {
+function BigTile({
+  icon: Icon,
+  label,
+  to,
+  colorClass,
+  disabled,
+}: BigTileProps) {
   const content = (
-    <div
-      className={`flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-2xl ${colorClass} ${
-        disabled ? 'opacity-40' : 'transition-transform hover:scale-[1.03]'
+    <motion.div
+      whileHover={disabled ? undefined : { scale: 1.03, y: -2 }}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
+      className={`relative flex aspect-[4/3] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl ${colorClass} ${
+        disabled ? 'opacity-40' : 'shadow-lg'
       }`}
     >
-      <span
-        className="material-symbols-outlined text-[48px] text-white"
-        style={{ fontVariationSettings: "'FILL' 1" }}
-      >
-        {icon}
-      </span>
-      <span className="text-body-lg font-extrabold tracking-wide text-white">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+      <Icon size={44} className="relative text-white" strokeWidth={1.75} />
+      <span className="text-body-lg relative font-extrabold tracking-wide text-white">
         {label}
       </span>
-    </div>
+    </motion.div>
   )
 
   if (disabled || !to) {
@@ -62,28 +76,32 @@ function BigTile({ icon, label, to, colorClass, disabled }: BigTileProps) {
   return <Link to={to}>{content}</Link>
 }
 
-function SmallTile({
-  icon,
-  label,
-  disabled,
-}: {
-  icon: string
+interface SmallTileProps {
+  icon: LucideIcon
   label: string
+  to?: string
   disabled?: boolean
-}) {
-  return (
-    <div
+}
+
+function SmallTile({ icon: Icon, label, to, disabled }: SmallTileProps) {
+  const content = (
+    <motion.div
+      whileHover={disabled ? undefined : { scale: 1.02 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       title={disabled ? 'Coming in a later phase' : undefined}
       className={`bg-surface-container-high flex items-center gap-3 rounded-xl px-5 py-4 ${
         disabled
           ? 'cursor-not-allowed opacity-40'
-          : 'hover:bg-surface-bright cursor-pointer transition-colors'
+          : 'hover:bg-surface-bright cursor-pointer'
       }`}
     >
-      <span className="material-symbols-outlined text-secondary">{icon}</span>
+      <Icon size={20} className="text-secondary" />
       <span className="text-on-surface font-semibold">{label}</span>
-    </div>
+    </motion.div>
   )
+
+  if (disabled || !to) return content
+  return <Link to={to}>{content}</Link>
 }
 
 export function HomePage() {
@@ -125,20 +143,15 @@ export function HomePage() {
       </header>
 
       <div className="gap-rail-item-spacing grid max-w-3xl grid-cols-3">
+        <BigTile icon={Tv} label="LIVE TV" to="/live" colorClass="bg-primary" />
         <BigTile
-          icon="live_tv"
-          label="LIVE TV"
-          to="/live"
-          colorClass="bg-primary"
-        />
-        <BigTile
-          icon="movie"
+          icon={Film}
           label="MOVIES"
           colorClass="bg-secondary"
           disabled
         />
         <BigTile
-          icon="theaters"
+          icon={Clapperboard}
           label="SERIES"
           colorClass="bg-tertiary"
           disabled
@@ -146,9 +159,9 @@ export function HomePage() {
       </div>
 
       <div className="gap-rail-item-spacing mt-4 grid max-w-3xl grid-cols-3">
-        <SmallTile icon="favorite" label="Favorites" disabled />
-        <SmallTile icon="calendar_view_day" label="EPG" disabled />
-        <SmallTile icon="settings" label="Settings" disabled />
+        <SmallTile icon={Heart} label="Favorites" to="/favorites" />
+        <SmallTile icon={CalendarDays} label="EPG" disabled />
+        <SmallTile icon={Settings} label="Settings" disabled />
       </div>
 
       <section className="mt-section-gap">
@@ -177,7 +190,7 @@ export function HomePage() {
                       state: { channels: featured, index: i },
                     })
                   }
-                  onToggleFavorite={() => toggleFavorite(channel.stream_id)}
+                  onToggleFavorite={() => toggleFavorite(channel)}
                 />
               </div>
             ))}

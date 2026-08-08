@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { Search } from 'lucide-react'
 import { useLiveCategories } from '../hooks/useLiveCategories'
 import { useLiveStreams } from '../hooks/useLiveStreams'
 import { useFavorites } from '../hooks/useFavorites'
@@ -75,9 +77,10 @@ export function LiveTvPage() {
           Live TV
         </h1>
         <div className="relative w-full max-w-xs">
-          <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[20px]">
-            search
-          </span>
+          <Search
+            size={18}
+            className="text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+          />
           <input
             type="text"
             value={query}
@@ -91,9 +94,10 @@ export function LiveTvPage() {
       <div className="gap-gutter-x flex min-h-0 flex-1">
         <div className="flex h-full w-[240px] shrink-0 flex-col">
           <div className="relative mb-3 shrink-0">
-            <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
-              search
-            </span>
+            <Search
+              size={16}
+              className="text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+            />
             <input
               type="text"
               value={categoryQuery}
@@ -165,7 +169,13 @@ export function LiveTvPage() {
 
           {streamsState.status === 'success' && filteredStreams.length > 0 && (
             <>
-              <div className="gap-rail-item-spacing grid grid-cols-2 pb-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <motion.div
+                key={selectedCategoryId ?? 'all'}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="gap-rail-item-spacing grid grid-cols-2 pb-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              >
                 {visibleStreams.map((channel, i) => (
                   <ChannelCard
                     key={channel.stream_id}
@@ -176,20 +186,22 @@ export function LiveTvPage() {
                         state: { channels: visibleStreams, index: i },
                       })
                     }
-                    onToggleFavorite={() => toggleFavorite(channel.stream_id)}
+                    onToggleFavorite={() => toggleFavorite(channel)}
                   />
                 ))}
-              </div>
+              </motion.div>
               {hasMore && (
                 <div className="flex justify-center pb-12">
-                  <button
+                  <motion.button
                     type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
                     className="bg-surface-container-high text-on-surface hover:bg-surface-bright rounded-xl px-6 py-3 transition-colors"
                   >
                     Load more ({filteredStreams.length - visibleStreams.length}{' '}
                     remaining)
-                  </button>
+                  </motion.button>
                 </div>
               )}
             </>
