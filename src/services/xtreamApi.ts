@@ -151,13 +151,14 @@ export async function getLiveCategories(
   return data as XtreamLiveCategory[]
 }
 
+/** Omit categoryId to fetch every live stream across all categories. */
 export async function getLiveStreams(
-  categoryId: string,
+  categoryId?: string,
   credentials: XtreamCredentials = getEnvCredentials(),
 ): Promise<XtreamLiveStream[]> {
   const url = buildApiUrl(credentials, {
     action: 'get_live_streams',
-    category_id: categoryId,
+    ...(categoryId ? { category_id: categoryId } : {}),
   })
   const data = await fetchXtreamJson(url)
 
