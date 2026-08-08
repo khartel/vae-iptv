@@ -15,8 +15,8 @@ This folder is the source of truth for how this project gets built, phase by pha
 | ----- | ------------------------------------------------------------------ | ----------- |
 | 0     | [phase-0-research-validation.md](phase-0-research-validation.md)   | Complete    |
 | 1     | [phase-1-project-setup.md](phase-1-project-setup.md)               | Complete    |
-| 2     | [phase-2-iptv-connection.md](phase-2-iptv-connection.md)           | Up next     |
-| 3     | [phase-3-first-stream.md](phase-3-first-stream.md)                 | Not started |
+| 2     | [phase-2-iptv-connection.md](phase-2-iptv-connection.md)           | Complete    |
+| 3     | [phase-3-first-stream.md](phase-3-first-stream.md)                 | Up next     |
 | 4     | [phase-4-live-tv-interface.md](phase-4-live-tv-interface.md)       | Not started |
 | 5     | [phase-5-epg.md](phase-5-epg.md)                                   | Not started |
 | 6     | [phase-6-movies-series.md](phase-6-movies-series.md)               | Not started |

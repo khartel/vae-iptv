@@ -37,3 +37,9 @@ Build a typed service layer that talks to the Xtream Codes API: authentication a
 ## Definition of done
 
 - A typed `xtreamApi` service exists, successfully authenticates against the real provider using `.env` credentials, and handles at least the "wrong credentials" and "network unreachable" error cases distinctly.
+
+## Findings (2026-08-08)
+
+- **Invalid-credentials response shape (important, non-obvious)**: this provider returns a bare `{"user_info":{"auth":0}}` for a wrong password — `server_info` is entirely absent, not just empty. A strict type guard requiring the full `XtreamAuthResponse` shape misclassified this as a `parse` error instead of `auth`. Fixed by checking `user_info.auth` first (only requiring `user_info` to exist), and only validating the full shape (including `server_info`) once `auth === 1`. This ordering matters for any future Xtream response handling in this codebase — don't assume failure responses share the success response's shape.
+- **Verified end-to-end in a real browser** (not just curl): built a temporary test harness in `App.tsx` that calls `login()` on mount, launched the actual Vite dev server, and drove it with headless Chromium (Playwright) to confirm both the success path (green "Auth succeeded" with real account data) and the fixed failure path (red "Login failed (auth)" with the correct message) render correctly with zero console errors. This is stronger evidence than a curl test alone, since it exercises the real `fetch()` call path a browser makes, including CORS and default User-Agent.
+- Dev server port note: `5173`/`5174` were occupied by other local projects during testing; Vite auto-fell-back to `5175`. Not an app issue, just something to check with `cat` on the dev server's stdout if `localhost:5173` ever shows unexpected content.
