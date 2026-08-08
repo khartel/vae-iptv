@@ -142,7 +142,7 @@ export function HomePage() {
         </p>
       </header>
 
-      <div className="gap-rail-item-spacing grid max-w-3xl grid-cols-3">
+      <div className="gap-rail-item-spacing mx-auto grid max-w-3xl grid-cols-3">
         <BigTile icon={Tv} label="LIVE TV" to="/live" colorClass="bg-primary" />
         <BigTile
           icon={Film}
@@ -158,7 +158,7 @@ export function HomePage() {
         />
       </div>
 
-      <div className="gap-rail-item-spacing mt-4 grid max-w-3xl grid-cols-3">
+      <div className="gap-rail-item-spacing mx-auto mt-4 grid max-w-3xl grid-cols-3">
         <SmallTile icon={Heart} label="Favorites" to="/favorites" />
         <SmallTile icon={CalendarDays} label="EPG" disabled />
         <SmallTile icon={Settings} label="Settings" disabled />
