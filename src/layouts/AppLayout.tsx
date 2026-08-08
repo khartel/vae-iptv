@@ -23,8 +23,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/live', icon: Tv, label: 'Live TV' },
-  { to: '/movies', icon: Film, label: 'Movies', disabled: true },
-  { to: '/series', icon: Clapperboard, label: 'Series', disabled: true },
+  { to: '/movies', icon: Film, label: 'Movies' },
+  { to: '/series', icon: Clapperboard, label: 'Series' },
   { to: '/favorites', icon: Heart, label: 'Favorites' },
   { to: '/epg', icon: CalendarDays, label: 'EPG', disabled: true },
 ]

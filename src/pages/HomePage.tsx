@@ -147,14 +147,14 @@ export function HomePage() {
         <BigTile
           icon={Film}
           label="MOVIES"
+          to="/movies"
           colorClass="bg-secondary"
-          disabled
         />
         <BigTile
           icon={Clapperboard}
           label="SERIES"
+          to="/series"
           colorClass="bg-tertiary"
-          disabled
         />
       </div>
 

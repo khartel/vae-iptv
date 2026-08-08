@@ -45,8 +45,13 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
       setErrorMessage('')
 
       let hls: Hls | null = null
+      // Only live channels are HLS (.m3u8). VOD movies/episodes are plain
+      // media files (mp4/mkv/etc) — routing those through hls.js makes it
+      // try to fetch and parse the file as an HLS manifest, which both fails
+      // to parse and can hit CORS on servers that only allow it on the API.
+      const isHls = /\.m3u8(\?|$)/i.test(src)
 
-      if (Hls.isSupported()) {
+      if (isHls && Hls.isSupported()) {
         hls = new Hls()
         hls.loadSource(src)
         hls.attachMedia(video)
@@ -59,7 +64,7 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
             setErrorMessage(`${data.type}: ${data.details}`)
           }
         })
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      } else if (!isHls || video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = src
         video.play().catch(() => {})
       } else {

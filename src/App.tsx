@@ -6,6 +6,10 @@ import { LoginPage } from './pages/LoginPage'
 import { HomePage } from './pages/HomePage'
 import { LiveTvPage } from './pages/LiveTvPage'
 import { FavoritesPage } from './pages/FavoritesPage'
+import { MoviesPage } from './pages/MoviesPage'
+import { MovieDetailsPage } from './pages/MovieDetailsPage'
+import { SeriesPage } from './pages/SeriesPage'
+import { SeriesDetailsPage } from './pages/SeriesDetailsPage'
 import { PlayerPage } from './pages/PlayerPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -41,6 +45,10 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/live" element={<LiveTvPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/movies" element={<MoviesPage />} />
+            <Route path="/movies/:vodId" element={<MovieDetailsPage />} />
+            <Route path="/series" element={<SeriesPage />} />
+            <Route path="/series/:seriesId" element={<SeriesDetailsPage />} />
           </Route>
           <Route
             path="/watch/:streamId"

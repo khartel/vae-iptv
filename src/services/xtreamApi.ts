@@ -1,9 +1,14 @@
 import type {
   XtreamAuthResponse,
+  XtreamCategory,
   XtreamCredentials,
   XtreamEpgListing,
   XtreamLiveCategory,
   XtreamLiveStream,
+  XtreamSeries,
+  XtreamSeriesInfo,
+  XtreamVodDetails,
+  XtreamVodStream,
 } from '../types/xtream'
 
 export type XtreamErrorKind = 'network' | 'auth' | 'parse'
@@ -207,4 +212,148 @@ export async function getShortEpg(
   }
 
   return (data as { epg_listings: XtreamEpgListing[] }).epg_listings
+}
+
+export async function getVodCategories(
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamCategory[]> {
+  const url = buildApiUrl(credentials, { action: 'get_vod_categories' })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of VOD categories but got something else.',
+    )
+  }
+
+  return data as XtreamCategory[]
+}
+
+/** Omit categoryId to fetch every movie across all categories. */
+export async function getVodStreams(
+  categoryId?: string,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamVodStream[]> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_vod_streams',
+    ...(categoryId ? { category_id: categoryId } : {}),
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of VOD streams but got something else.',
+    )
+  }
+
+  return data as XtreamVodStream[]
+}
+
+/** Movie details, including the container_extension needed to build its playback URL. */
+export async function getVodInfo(
+  vodId: number,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamVodDetails> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_vod_info',
+    vod_id: String(vodId),
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('movie_data' in data) ||
+    !('info' in data)
+  ) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a VOD info response but got something else.',
+    )
+  }
+
+  return data as XtreamVodDetails
+}
+
+/** Builds a playable URL for a movie, per Xtream's URL convention. */
+export function buildVodStreamUrl(
+  vodId: number,
+  extension: string,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): string {
+  return `${credentials.serverUrl}/movie/${credentials.username}/${credentials.password}/${vodId}.${extension}`
+}
+
+export async function getSeriesCategories(
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamCategory[]> {
+  const url = buildApiUrl(credentials, { action: 'get_series_categories' })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of series categories but got something else.',
+    )
+  }
+
+  return data as XtreamCategory[]
+}
+
+/** Omit categoryId to fetch every series across all categories. */
+export async function getSeriesList(
+  categoryId?: string,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamSeries[]> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_series',
+    ...(categoryId ? { category_id: categoryId } : {}),
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (!Array.isArray(data)) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a list of series but got something else.',
+    )
+  }
+
+  return data as XtreamSeries[]
+}
+
+/** Series details: seasons, description, and episodes keyed by season number. */
+export async function getSeriesInfo(
+  seriesId: number,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamSeriesInfo> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_series_info',
+    series_id: String(seriesId),
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('episodes' in data) ||
+    !('seasons' in data)
+  ) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected a series info response but got something else.',
+    )
+  }
+
+  return data as XtreamSeriesInfo
+}
+
+/** Builds a playable URL for a series episode, per Xtream's URL convention. */
+export function buildEpisodeStreamUrl(
+  episodeId: number,
+  extension: string,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): string {
+  return `${credentials.serverUrl}/series/${credentials.username}/${credentials.password}/${episodeId}.${extension}`
 }

@@ -67,3 +67,101 @@ export interface XtreamEpgListing {
   start_timestamp: number
   stop_timestamp: number
 }
+
+/** get_vod_categories / get_series_categories return this same shape. */
+export type XtreamCategory = XtreamLiveCategory
+
+export interface XtreamVodStream {
+  num: number
+  name: string
+  stream_type: string
+  stream_id: number
+  stream_icon: string
+  rating: number | string
+  rating_5based: number
+  category_id: string
+  container_extension: string
+  custom_sid: string | null
+  direct_source: string
+}
+
+export interface XtreamVodInfo {
+  name: string
+  cover_big: string
+  movie_image: string
+  releasedate: string
+  description: string
+  plot: string
+  director: string
+  cast: string
+  genre: string
+  duration: string
+}
+
+export interface XtreamVodData {
+  stream_id: number
+  name: string
+  category_id: string
+  container_extension: string
+}
+
+/** Full get_vod_info response. */
+export interface XtreamVodDetails {
+  info: XtreamVodInfo
+  movie_data: XtreamVodData
+}
+
+export interface XtreamSeriesSeason {
+  air_date: string
+  episode_count: number
+  id: number
+  name: string
+  overview: string
+  season_number: number
+  cover: string
+  cover_big: string
+}
+
+export interface XtreamSeries {
+  num: number
+  name: string
+  series_id: number
+  cover: string
+  plot: string
+  cast: string
+  director: string
+  genre: string
+  releaseDate: string
+  rating: string
+  rating_5based: number
+  category_id: string
+  seasons: XtreamSeriesSeason[]
+}
+
+export interface XtreamEpisode {
+  id: number
+  episode_num: number
+  title: string
+  container_extension: string
+  season: number
+  info: {
+    plot?: string
+    duration?: string
+    movie_image?: string
+    releasedate?: string
+  }
+}
+
+/** Full get_series_info response — episodes are keyed by season number string. */
+export interface XtreamSeriesInfo {
+  seasons: XtreamSeriesSeason[]
+  info: {
+    name: string
+    cover: string
+    plot: string
+    cast: string
+    director: string
+    genre: string
+  }
+  episodes: Record<string, XtreamEpisode[]>
+}
