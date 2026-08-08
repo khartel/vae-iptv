@@ -3,11 +3,19 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { buildLiveStreamUrl } from '../services/xtreamApi'
 import { useFavorites } from '../hooks/useFavorites'
+import { useShortEpg } from '../hooks/useShortEpg'
 import type { XtreamLiveStream } from '../types/xtream'
 
 interface PlayerLocationState {
   channels?: XtreamLiveStream[]
   index?: number
+}
+
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 export function PlayerPage() {
@@ -42,6 +50,12 @@ export function PlayerPage() {
   const streamUrl = currentChannel
     ? buildLiveStreamUrl(currentChannel.stream_id, 'm3u8')
     : ''
+
+  const epg = useShortEpg(
+    currentChannel?.stream_id ?? 0,
+    currentChannel !== undefined,
+  )
+  const [showDetail, setShowDetail] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(true)
@@ -122,6 +136,25 @@ export function PlayerPage() {
           <span className="text-body-md font-semibold">
             {currentChannel.name}
           </span>
+
+          {epg.status === 'success' && epg.next && (
+            <div className="border-outline-variant/30 bg-surface-container/60 ml-auto flex items-center gap-4 rounded-xl border p-4 backdrop-blur-xl">
+              <span
+                className="material-symbols-outlined text-outline"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                schedule
+              </span>
+              <div>
+                <p className="text-label-caps text-outline">
+                  UP NEXT • {formatTime(epg.next.start)}
+                </p>
+                <p className="text-body-md font-semibold text-on-surface">
+                  {epg.next.title}
+                </p>
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="from-background via-background/80 pointer-events-auto bg-gradient-to-t to-transparent px-6 pb-8">
@@ -140,9 +173,20 @@ export function PlayerPage() {
                   </span>
                 )}
               </div>
-              <span className="truncate text-body-md font-semibold">
-                {currentChannel.name}
-              </span>
+              <div className="min-w-0">
+                <span className="block truncate text-body-md font-semibold">
+                  {currentChannel.name}
+                </span>
+                {epg.status === 'success' && epg.current && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDetail(true)}
+                    className="hover:text-on-surface block max-w-full truncate text-left text-sm text-on-surface-variant underline decoration-dotted outline-none"
+                  >
+                    {epg.current.title}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -204,6 +248,35 @@ export function PlayerPage() {
           </div>
         </div>
       </div>
+
+      {showDetail && epg.status === 'success' && epg.current && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-6"
+          onClick={() => setShowDetail(false)}
+        >
+          <div
+            className="border-outline-variant/30 bg-surface-container max-w-lg rounded-2xl border p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-label-caps text-primary mb-1">
+              {formatTime(epg.current.start)} – {formatTime(epg.current.end)}
+            </p>
+            <h2 className="text-headline-md mb-3 font-bold">
+              {epg.current.title}
+            </h2>
+            <p className="text-on-surface-variant">
+              {epg.current.description || 'No description available.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDetail(false)}
+              className="bg-surface-container-high hover:bg-surface-bright mt-6 rounded-xl px-4 py-2 outline-none transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

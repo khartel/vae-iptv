@@ -53,3 +53,17 @@ export interface XtreamLiveStream {
   direct_source: string
   tv_archive_duration: number
 }
+
+/** Raw get_short_epg entry — title/description are base64-encoded. */
+export interface XtreamEpgListing {
+  id: number
+  epg_id: number
+  title: string
+  lang: string
+  start: string
+  end: string
+  description: string
+  channel_id: string
+  start_timestamp: number
+  stop_timestamp: number
+}

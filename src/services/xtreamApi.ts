@@ -1,6 +1,7 @@
 import type {
   XtreamAuthResponse,
   XtreamCredentials,
+  XtreamEpgListing,
   XtreamLiveCategory,
   XtreamLiveStream,
 } from '../types/xtream'
@@ -179,4 +180,31 @@ export function buildLiveStreamUrl(
   credentials: XtreamCredentials = getEnvCredentials(),
 ): string {
   return `${credentials.serverUrl}/live/${credentials.username}/${credentials.password}/${streamId}.${extension}`
+}
+
+/** Short EPG (current + a few upcoming programs) for one channel. */
+export async function getShortEpg(
+  streamId: number,
+  limit = 2,
+  credentials: XtreamCredentials = getEnvCredentials(),
+): Promise<XtreamEpgListing[]> {
+  const url = buildApiUrl(credentials, {
+    action: 'get_short_epg',
+    stream_id: String(streamId),
+    limit: String(limit),
+  })
+  const data = await fetchXtreamJson(url)
+
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !Array.isArray((data as Record<string, unknown>).epg_listings)
+  ) {
+    throw new XtreamApiError(
+      'parse',
+      'Expected an epg_listings array but got something else.',
+    )
+  }
+
+  return (data as { epg_listings: XtreamEpgListing[] }).epg_listings
 }
