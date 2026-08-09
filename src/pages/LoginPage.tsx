@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import { Loader2 } from 'lucide-react'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo-full.png'
 import { useAuth } from '../app/AuthContext'
 import { getEnvCredentials } from '../services/xtreamApi'
 
@@ -20,7 +20,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="bg-background relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
       <div className="bg-primary/20 pointer-events-none absolute top-1/4 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full blur-[120px]" />
 
       <motion.div
@@ -29,8 +29,12 @@ export function LoginPage() {
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="relative w-full max-w-sm"
       >
-        <div className="mb-8 flex flex-col items-center gap-4">
-          <img src={logo} alt="VAE IPTV" className="h-16 w-auto rounded-lg" />
+        <div className="mb-10 flex flex-col items-center gap-4">
+          <img
+            src={logo}
+            alt="VAE IPTV"
+            className="h-28 w-auto drop-shadow-[0_0_30px_rgba(192,193,255,0.35)]"
+          />
         </div>
 
         <form

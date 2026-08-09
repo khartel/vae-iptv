@@ -110,7 +110,7 @@ export function PlayerPage() {
 
   if (!currentChannel) {
     return (
-      <main className="bg-background text-on-surface-variant flex min-h-screen items-center justify-center">
+      <main className="text-on-surface-variant flex min-h-screen items-center justify-center">
         No channel selected.
       </main>
     )

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './app/AuthContext'
+import { AppBackground } from './components/AppBackground'
 import { AppLayout } from './layouts/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 import { HomePage } from './pages/HomePage'
@@ -17,7 +18,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (state.status === 'loading') {
     return (
-      <div className="bg-background text-on-surface-variant flex min-h-screen items-center justify-center">
+      <div className="text-on-surface-variant flex min-h-screen items-center justify-center">
         Connecting to IPTV server…
       </div>
     )
@@ -33,6 +34,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function App() {
   return (
     <AuthProvider>
+      <AppBackground />
       <BrowserRouter>
         <Routes>
           <Route

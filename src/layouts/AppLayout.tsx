@@ -10,7 +10,7 @@ import {
   LogOut,
   type LucideIcon,
 } from 'lucide-react'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo-mark.png'
 import { useAuth } from '../app/AuthContext'
 
 interface NavItem {
@@ -72,13 +72,13 @@ export function AppLayout() {
   const { logout } = useAuth()
 
   return (
-    <div className="bg-background text-on-background min-h-screen">
+    <div className="text-on-background min-h-screen">
       <aside className="group py-safe-margin-y fixed top-0 left-0 z-50 flex h-full w-[96px] flex-col overflow-hidden bg-surface-container/80 px-4 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:w-[320px]">
         <div className="mb-8 flex items-center gap-4 px-2 whitespace-nowrap">
           <img
             src={logo}
             alt="VAE IPTV"
-            className="h-12 w-12 shrink-0 rounded-lg object-cover"
+            className="h-10 w-12 shrink-0 object-contain"
           />
           <span className="text-label-caps text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             VAE IPTV

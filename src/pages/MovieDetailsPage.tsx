@@ -20,7 +20,7 @@ export function MovieDetailsPage() {
 
   if (state.status === 'loading') {
     return (
-      <main className="bg-background text-on-surface-variant flex min-h-screen items-center justify-center">
+      <main className="text-on-surface-variant flex min-h-screen items-center justify-center">
         Loading…
       </main>
     )
@@ -28,7 +28,7 @@ export function MovieDetailsPage() {
 
   if (state.status === 'error') {
     return (
-      <main className="bg-background flex min-h-screen flex-col items-center justify-center gap-4">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-error">{state.message}</p>
         <button
           type="button"
@@ -50,7 +50,7 @@ export function MovieDetailsPage() {
   )
 
   return (
-    <main className="bg-background relative min-h-screen">
+    <main className="relative min-h-screen">
       {poster && (
         <div className="absolute inset-0 h-[60vh] overflow-hidden">
           <img
