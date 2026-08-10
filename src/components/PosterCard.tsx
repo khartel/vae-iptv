@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { Film, Star } from 'lucide-react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 
 interface PosterCardProps {
   title: string
@@ -16,14 +17,17 @@ export function PosterCard({
   rating,
   onSelect,
 }: PosterCardProps) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onSelect })
+
   return (
     <motion.button
+      ref={ref}
       type="button"
       onClick={onSelect}
       whileHover={{ scale: 1.05, y: -4 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-      className="group focus-visible:border-primary bg-surface-container relative aspect-[2/3] w-full overflow-hidden rounded-xl border-2 border-transparent text-left outline-none"
+      className="group bg-surface-container relative aspect-[2/3] w-full overflow-hidden rounded-xl text-left outline-none"
     >
       {posterUrl ? (
         <img
@@ -48,8 +52,8 @@ export function PosterCard({
         </div>
       )}
 
-      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/30 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-        <p className="truncate text-sm font-semibold text-white">{title}</p>
+      <div className="group-focus-visible:opacity-100 absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/30 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <p className="truncate text-base font-bold text-white">{title}</p>
         {subtitle && (
           <p className="text-on-surface-variant truncate text-xs">{subtitle}</p>
         )}

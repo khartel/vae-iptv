@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@noriginmedia/norigin-spatial-navigation": "^3.3.0",
     "@tailwindcss/vite": "^4.3.3",
     "hls.js": "^1.6.17",
     "lucide-react": "^1.30.0",

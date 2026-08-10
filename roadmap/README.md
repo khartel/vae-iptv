@@ -20,8 +20,8 @@ This folder is the source of truth for how this project gets built, phase by pha
 | 4     | [phase-4-live-tv-interface.md](phase-4-live-tv-interface.md)       | Complete (see Status note — real design system adopted) |
 | 5     | [phase-5-epg.md](phase-5-epg.md)                                   | Complete                                                |
 | 6     | [phase-6-movies-series.md](phase-6-movies-series.md)               | Complete                                                |
-| 7     | [phase-7-tv-optimization.md](phase-7-tv-optimization.md)           | Up next                                                 |
-| 8     | [phase-8-lg-webos.md](phase-8-lg-webos.md)                         | Not started                                             |
+| 7     | [phase-7-tv-optimization.md](phase-7-tv-optimization.md)           | Complete                                                |
+| 8     | [phase-8-lg-webos.md](phase-8-lg-webos.md)                         | Up next                                                 |
 | 9     | [phase-9-production-hardening.md](phase-9-production-hardening.md) | Not started                                             |
 
 ## Non-negotiable ground rules (apply to every phase)

@@ -4,7 +4,11 @@ import { motion } from 'motion/react'
 import { Search } from 'lucide-react'
 import { useVodCategories } from '../hooks/useVodCategories'
 import { useVodStreams } from '../hooks/useVodStreams'
+import { useSpatialInput } from '../hooks/useSpatialInput'
+import { useBackNavigation } from '../hooks/useBackNavigation'
 import { PosterCard } from '../components/PosterCard'
+import { CategorySidebar } from '../components/CategorySidebar'
+import { LoadMoreButton } from '../components/LoadMoreButton'
 
 const PAGE_SIZE = 60
 
@@ -21,9 +25,11 @@ export function MoviesPage() {
 
   const categoriesState = useVodCategories()
   const streamsState = useVodStreams(selectedCategoryId)
+  const movieSearch = useSpatialInput<HTMLInputElement>()
 
-  const [categoryQuery, setCategoryQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useBackNavigation()
 
   const streams = streamsState.status === 'success' ? streamsState.data : []
 
@@ -35,17 +41,6 @@ export function MoviesPage() {
 
   const visibleStreams = filteredStreams.slice(0, visibleCount)
   const hasMore = filteredStreams.length > visibleStreams.length
-
-  const filteredCategories =
-    categoriesState.status === 'success'
-      ? categoryQuery.trim()
-        ? categoriesState.data.filter((c) =>
-            c.category_name
-              .toLowerCase()
-              .includes(categoryQuery.trim().toLowerCase()),
-          )
-        : categoriesState.data
-      : []
 
   function selectCategory(categoryId: string | null) {
     setVisibleCount(PAGE_SIZE)
@@ -80,9 +75,11 @@ export function MoviesPage() {
             className="text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
           />
           <input
+            ref={movieSearch.ref}
             type="text"
             value={query}
             onChange={(e) => setMovieQuery(e.target.value)}
+            onBlur={movieSearch.onBlur}
             placeholder="Search movies…"
             className="bg-surface-container-high text-on-surface border-outline-variant/30 focus:border-primary w-full rounded-xl border py-2.5 pr-4 pl-10 outline-none"
           />
@@ -90,68 +87,22 @@ export function MoviesPage() {
       </div>
 
       <div className="gap-gutter-x flex min-h-0 flex-1">
-        <div className="flex h-full w-[240px] shrink-0 flex-col">
-          <div className="relative mb-3 shrink-0">
-            <Search
-              size={16}
-              className="text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
-            />
-            <input
-              type="text"
-              value={categoryQuery}
-              onChange={(e) => setCategoryQuery(e.target.value)}
-              placeholder="Search categories…"
-              className="bg-surface-container-high text-on-surface border-outline-variant/30 focus:border-primary w-full rounded-lg border py-2 pr-3 pl-9 text-sm outline-none"
-            />
-          </div>
-
-          <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto pb-8">
-            <button
-              type="button"
-              onClick={() => selectCategory(null)}
-              className={`w-full rounded-xl px-6 py-3 text-left transition-colors outline-none ${
-                selectedCategoryId === null
-                  ? 'bg-surface-container-high text-primary border-primary border-l-4 font-bold'
-                  : 'text-on-surface-variant hover:bg-surface-container-high'
-              }`}
-            >
-              All
-            </button>
-
-            {categoriesState.status === 'loading' && (
-              <p className="text-on-surface-variant px-6 py-3 text-sm">
-                Loading categories…
-              </p>
-            )}
-            {categoriesState.status === 'error' && (
-              <p className="text-error px-6 py-3 text-sm">
-                {categoriesState.message}
-              </p>
-            )}
-            {categoriesState.status === 'success' &&
-              filteredCategories.length === 0 && (
-                <p className="text-on-surface-variant px-6 py-3 text-sm">
-                  No categories match.
-                </p>
-              )}
-            {categoriesState.status === 'success' &&
-              filteredCategories.map((category) => (
-                <button
-                  key={category.category_id}
-                  type="button"
-                  onClick={() => selectCategory(category.category_id)}
-                  className={`w-full truncate rounded-xl px-6 py-3 text-left transition-colors outline-none ${
-                    selectedCategoryId === category.category_id
-                      ? 'bg-surface-container-high text-primary border-primary border-l-4 font-bold'
-                      : 'text-on-surface-variant hover:bg-surface-container-high'
-                  }`}
-                  title={category.category_name}
-                >
-                  {category.category_name}
-                </button>
-              ))}
-          </div>
-        </div>
+        <CategorySidebar
+          status={categoriesState.status}
+          categories={
+            categoriesState.status === 'success' ? categoriesState.data : []
+          }
+          errorMessage={
+            categoriesState.status === 'error'
+              ? categoriesState.message
+              : undefined
+          }
+          selectedCategoryId={selectedCategoryId}
+          onSelectCategory={selectCategory}
+          searchPlaceholder="Search categories…"
+          loadingLabel="Loading categories…"
+          emptyLabel="No categories match."
+        />
 
         <div className="no-scrollbar h-full flex-1 overflow-y-auto pb-8">
           {streamsState.status === 'loading' && (
@@ -186,18 +137,10 @@ export function MoviesPage() {
                 ))}
               </motion.div>
               {hasMore && (
-                <div className="flex justify-center pb-12">
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                    className="bg-surface-container-high text-on-surface hover:bg-surface-bright rounded-xl px-6 py-3 transition-colors"
-                  >
-                    Load more ({filteredStreams.length - visibleStreams.length}{' '}
-                    remaining)
-                  </motion.button>
-                </div>
+                <LoadMoreButton
+                  remaining={filteredStreams.length - visibleStreams.length}
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                />
               )}
             </>
           )}

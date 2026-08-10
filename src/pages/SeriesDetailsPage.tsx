@@ -1,10 +1,129 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { ArrowLeft, Play, SkipBack, SkipForward } from 'lucide-react'
 import { useAsyncResource } from '../hooks/useAsyncResource'
+import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getSeriesInfo, buildEpisodeStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+import type { XtreamEpisode } from '../types/xtream'
+
+function SeasonTabButton({
+  season,
+  active,
+  onSelect,
+}: {
+  season: number
+  active: boolean
+  onSelect: () => void
+}) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onSelect })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onSelect}
+      className={`rounded-xl px-5 py-2.5 text-sm font-semibold outline-none transition-colors ${
+        active
+          ? 'bg-primary text-on-primary'
+          : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'
+      }`}
+    >
+      Season {season}
+    </button>
+  )
+}
+
+function ClosePlayerButton({ onClose }: { onClose: () => void }) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onClose })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClose}
+      aria-label="Close player"
+      className="text-on-background rounded-full p-2 outline-none"
+    >
+      <ArrowLeft size={24} />
+    </button>
+  )
+}
+
+function EpisodeNavButton({
+  direction,
+  disabled,
+  onClick,
+}: {
+  direction: 'prev' | 'next'
+  disabled: boolean
+  onClick: () => void
+}) {
+  const { ref } = useFocusable<HTMLButtonElement>({
+    focusable: !disabled,
+    onEnterPress: onClick,
+  })
+  const Icon = direction === 'prev' ? SkipBack : SkipForward
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={direction === 'prev' ? 'Previous episode' : 'Next episode'}
+      className="text-on-surface-variant hover:text-on-surface rounded-full bg-black/50 p-3 outline-none backdrop-blur-md disabled:opacity-30"
+    >
+      <Icon size={22} fill="currentColor" />
+    </button>
+  )
+}
+
+function EpisodeRow({
+  episode,
+  onPlay,
+}: {
+  episode: XtreamEpisode
+  onPlay: () => void
+}) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onPlay })
+  return (
+    <motion.button
+      ref={ref}
+      type="button"
+      whileHover={{ scale: 1.01 }}
+      onClick={onPlay}
+      className="bg-surface-container hover:bg-surface-container-high flex items-center gap-4 rounded-xl p-3 text-left outline-none transition-colors"
+    >
+      {episode.info.movie_image ? (
+        <img
+          src={episode.info.movie_image}
+          alt=""
+          className="h-20 w-32 shrink-0 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="bg-surface-container-high flex h-20 w-32 shrink-0 items-center justify-center rounded-lg">
+          <Play size={20} className="text-on-surface-variant" />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold">
+          {episode.episode_num}. {episode.title}
+        </p>
+        {episode.info.duration && episode.info.duration !== '00:00:00' && (
+          <p className="text-on-surface-variant text-sm">
+            {episode.info.duration}
+          </p>
+        )}
+        {episode.info.plot && (
+          <p className="text-on-surface-variant mt-1 line-clamp-2 text-sm">
+            {episode.info.plot}
+          </p>
+        )}
+      </div>
+      <Play size={22} className="text-on-surface-variant shrink-0" />
+    </motion.button>
+  )
+}
 
 export function SeriesDetailsPage() {
   const { seriesId } = useParams<{ seriesId: string }>()
@@ -12,6 +131,17 @@ export function SeriesDetailsPage() {
   const id = Number(seriesId)
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
   const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+  const { ref: backRef } = useFocusable<HTMLButtonElement>({
+    onEnterPress: () => navigate(-1),
+  })
+
+  useBackNavigation(() => {
+    if (playingIndex !== null) {
+      setPlayingIndex(null)
+      return true
+    }
+    return false
+  })
 
   const state = useAsyncResource(
     () => getSeriesInfo(id),
@@ -74,6 +204,7 @@ export function SeriesDetailsPage() {
 
       <div className="pt-safe-margin-y px-safe-margin-x pb-safe-margin-y relative">
         <button
+          ref={backRef}
           type="button"
           onClick={() => navigate(-1)}
           className="text-on-surface-variant hover:text-on-surface mb-8 flex items-center gap-2 outline-none transition-colors"
@@ -123,59 +254,22 @@ export function SeriesDetailsPage() {
         <div className="mt-section-gap">
           <div className="mb-4 flex gap-2">
             {seasonNumbers.map((season) => (
-              <button
+              <SeasonTabButton
                 key={season}
-                type="button"
-                onClick={() => setSelectedSeason(season)}
-                className={`rounded-xl px-5 py-2.5 text-sm font-semibold outline-none transition-colors ${
-                  season === activeSeason
-                    ? 'bg-primary text-on-primary'
-                    : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'
-                }`}
-              >
-                Season {season}
-              </button>
+                season={season}
+                active={season === activeSeason}
+                onSelect={() => setSelectedSeason(season)}
+              />
             ))}
           </div>
 
           <div className="flex flex-col gap-3">
             {activeEpisodes.map((episode, i) => (
-              <motion.button
+              <EpisodeRow
                 key={episode.id}
-                type="button"
-                whileHover={{ scale: 1.01 }}
-                onClick={() => setPlayingIndex(i)}
-                className="bg-surface-container hover:bg-surface-container-high flex items-center gap-4 rounded-xl p-3 text-left outline-none transition-colors"
-              >
-                {episode.info.movie_image ? (
-                  <img
-                    src={episode.info.movie_image}
-                    alt=""
-                    className="h-20 w-32 shrink-0 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="bg-surface-container-high flex h-20 w-32 shrink-0 items-center justify-center rounded-lg">
-                    <Play size={20} className="text-on-surface-variant" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">
-                    {episode.episode_num}. {episode.title}
-                  </p>
-                  {episode.info.duration &&
-                    episode.info.duration !== '00:00:00' && (
-                      <p className="text-on-surface-variant text-sm">
-                        {episode.info.duration}
-                      </p>
-                    )}
-                  {episode.info.plot && (
-                    <p className="text-on-surface-variant mt-1 line-clamp-2 text-sm">
-                      {episode.info.plot}
-                    </p>
-                  )}
-                </div>
-                <Play size={22} className="text-on-surface-variant shrink-0" />
-              </motion.button>
+                episode={episode}
+                onPlay={() => setPlayingIndex(i)}
+              />
             ))}
           </div>
         </div>
@@ -195,32 +289,25 @@ export function SeriesDetailsPage() {
             />
             <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
               <div className="from-background pointer-events-auto flex items-center gap-4 bg-gradient-to-b to-transparent p-6">
-                <button
-                  type="button"
-                  onClick={() => setPlayingIndex(null)}
-                  aria-label="Close player"
-                  className="text-on-background rounded-full p-2 outline-none"
-                >
-                  <ArrowLeft size={24} />
-                </button>
+                <ClosePlayerButton onClose={() => setPlayingIndex(null)} />
                 <span className="font-semibold">
                   {playingEpisode.episode_num}. {playingEpisode.title}
                 </span>
               </div>
               <div className="pointer-events-auto flex justify-center gap-4 p-6">
-                <button
-                  type="button"
+                <EpisodeNavButton
+                  direction="prev"
+                  disabled={playingIndex === null || playingIndex <= 0}
                   onClick={() =>
                     setPlayingIndex((idx) => (idx !== null ? idx - 1 : null))
                   }
-                  disabled={playingIndex === null || playingIndex <= 0}
-                  aria-label="Previous episode"
-                  className="text-on-surface-variant hover:text-on-surface rounded-full bg-black/50 p-3 outline-none backdrop-blur-md disabled:opacity-30"
-                >
-                  <SkipBack size={22} fill="currentColor" />
-                </button>
-                <button
-                  type="button"
+                />
+                <EpisodeNavButton
+                  direction="next"
+                  disabled={
+                    playingIndex === null ||
+                    playingIndex >= activeEpisodes.length - 1
+                  }
                   onClick={() =>
                     setPlayingIndex((idx) =>
                       idx !== null && idx < activeEpisodes.length - 1
@@ -228,15 +315,7 @@ export function SeriesDetailsPage() {
                         : idx,
                     )
                   }
-                  disabled={
-                    playingIndex === null ||
-                    playingIndex >= activeEpisodes.length - 1
-                  }
-                  aria-label="Next episode"
-                  className="text-on-surface-variant hover:text-on-surface rounded-full bg-black/50 p-3 outline-none backdrop-blur-md disabled:opacity-30"
-                >
-                  <SkipForward size={22} fill="currentColor" />
-                </button>
+                />
               </div>
             </div>
           </motion.div>

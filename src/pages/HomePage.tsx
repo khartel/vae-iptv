@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import {
   Tv,
   Film,
@@ -73,7 +74,28 @@ function BigTile({
       </div>
     )
   }
-  return <Link to={to}>{content}</Link>
+  return <FocusableTileLink to={to}>{content}</FocusableTileLink>
+}
+
+// Separate component so useFocusable is only ever called for tiles that
+// actually register in the focus graph — disabled/comingsoon tiles above
+// never call it at all instead of registering with no DOM node attached.
+function FocusableTileLink({
+  to,
+  children,
+}: {
+  to: string
+  children: ReactNode
+}) {
+  const navigate = useNavigate()
+  const { ref } = useFocusable<HTMLAnchorElement>({
+    onEnterPress: () => navigate(to),
+  })
+  return (
+    <Link ref={ref} to={to} className="block outline-none">
+      {children}
+    </Link>
+  )
 }
 
 interface SmallTileProps {
@@ -101,7 +123,7 @@ function SmallTile({ icon: Icon, label, to, disabled }: SmallTileProps) {
   )
 
   if (disabled || !to) return content
-  return <Link to={to}>{content}</Link>
+  return <FocusableTileLink to={to}>{content}</FocusableTileLink>
 }
 
 export function HomePage() {

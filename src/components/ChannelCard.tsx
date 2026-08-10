@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Heart, Radio } from 'lucide-react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useShortEpg } from '../hooks/useShortEpg'
 import type { XtreamLiveStream } from '../types/xtream'
 
@@ -25,6 +26,7 @@ export function ChannelCard({
     undefined,
   )
   const epg = useShortEpg(channel.stream_id, epgEnabled)
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onSelect })
 
   function startHover() {
     hoverTimeout.current = setTimeout(() => setEpgEnabled(true), 300)
@@ -35,6 +37,7 @@ export function ChannelCard({
 
   return (
     <motion.button
+      ref={ref}
       type="button"
       onClick={onSelect}
       onMouseEnter={startHover}
@@ -44,7 +47,7 @@ export function ChannelCard({
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="group focus-visible:border-primary bg-surface-container relative aspect-video w-full overflow-hidden rounded-lg border-2 border-transparent text-left outline-none focus-visible:shadow-[0_0_20px_rgba(192,193,255,0.3)]"
+      className="group bg-surface-container relative aspect-video w-full overflow-hidden rounded-lg text-left outline-none"
     >
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
       {channel.stream_icon && (
@@ -92,7 +95,7 @@ export function ChannelCard({
           </motion.span>
         </div>
         <div>
-          <h3 className="truncate text-sm font-semibold text-white">
+          <h3 className="truncate text-base font-bold text-white">
             {channel.name}
           </h3>
           {epg.status === 'success' && epg.current && (

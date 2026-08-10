@@ -82,3 +82,20 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Phase 7: one focus style for every interactive element, app-wide, so
+   remote/arrow-key navigation is always visible no matter which page or
+   component it lands on — see roadmap/phase-7-tv-optimization.md. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: none;
+  transform: scale(1.04);
+  z-index: 20;
+  box-shadow:
+    0 0 0 2px var(--color-primary),
+    0 0 20px 2px rgba(192, 193, 255, 0.35);
+  transition:
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
+}

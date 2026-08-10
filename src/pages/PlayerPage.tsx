@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import {
   ArrowLeft,
   Clock,
@@ -15,6 +16,7 @@ import { VideoPlayer } from '../components/VideoPlayer'
 import { buildLiveStreamUrl } from '../services/xtreamApi'
 import { useFavorites } from '../hooks/useFavorites'
 import { useShortEpg } from '../hooks/useShortEpg'
+import { useBackNavigation } from '../hooks/useBackNavigation'
 import type { XtreamLiveStream } from '../types/xtream'
 
 interface PlayerLocationState {
@@ -27,6 +29,71 @@ function formatTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
+}
+
+function EpgCurrentButton({
+  title,
+  onPress,
+}: {
+  title: string
+  onPress: () => void
+}) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onPress })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onPress}
+      className="hover:text-on-surface text-on-surface-variant block max-w-full truncate text-left text-sm underline decoration-dotted outline-none"
+    >
+      {title}
+    </button>
+  )
+}
+
+function EpgModalCloseButton({ onClose }: { onClose: () => void }) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onClose })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClose}
+      aria-label="Close"
+      className="text-on-surface-variant hover:text-on-surface absolute top-4 right-4 outline-none"
+    >
+      <X size={20} />
+    </button>
+  )
+}
+
+function ChannelSkipButton({
+  direction,
+  disabled,
+  onClick,
+}: {
+  direction: 'prev' | 'next'
+  disabled: boolean
+  onClick: () => void
+}) {
+  const { ref } = useFocusable<HTMLButtonElement>({
+    focusable: !disabled,
+    onEnterPress: onClick,
+  })
+  const Icon = direction === 'prev' ? SkipBack : SkipForward
+  return (
+    <motion.button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={disabled ? undefined : { scale: 1.1 }}
+      whileTap={disabled ? undefined : { scale: 0.9 }}
+      aria-label={direction === 'prev' ? 'Previous channel' : 'Next channel'}
+      className="text-on-surface-variant hover:text-on-surface rounded-full p-3 outline-none transition-colors disabled:opacity-30"
+    >
+      <Icon size={24} fill="currentColor" />
+    </motion.button>
+  )
 }
 
 export function PlayerPage() {
@@ -108,6 +175,31 @@ export function PlayerPage() {
     })
   }
 
+  const { ref: backRef } = useFocusable<HTMLButtonElement>({
+    onEnterPress: () => navigate(-1),
+  })
+  const { ref: playPauseRef, focusSelf: focusPlayPause } =
+    useFocusable<HTMLButtonElement>({
+      onEnterPress: togglePlayPause,
+    })
+
+  // Player is a standalone route (no shared layout to do this for it) —
+  // give arrow-key nav a starting point the moment controls exist.
+  useEffect(() => {
+    focusPlayPause()
+  }, [focusPlayPause])
+  const { ref: favoriteRef } = useFocusable<HTMLButtonElement>({
+    onEnterPress: () => currentChannel && toggleFavorite(currentChannel),
+  })
+
+  useBackNavigation(() => {
+    if (showDetail) {
+      setShowDetail(false)
+      return true
+    }
+    return false
+  })
+
   if (!currentChannel) {
     return (
       <main className="text-on-surface-variant flex min-h-screen items-center justify-center">
@@ -137,6 +229,7 @@ export function PlayerPage() {
       >
         <header className="from-background pointer-events-auto flex items-center gap-4 bg-gradient-to-b to-transparent p-6">
           <motion.button
+            ref={backRef}
             type="button"
             onClick={() => navigate(-1)}
             whileHover={{ scale: 1.1 }}
@@ -186,30 +279,22 @@ export function PlayerPage() {
                   {currentChannel.name}
                 </span>
                 {epg.status === 'success' && epg.current && (
-                  <button
-                    type="button"
-                    onClick={() => setShowDetail(true)}
-                    className="hover:text-on-surface text-on-surface-variant block max-w-full truncate text-left text-sm underline decoration-dotted outline-none"
-                  >
-                    {epg.current.title}
-                  </button>
+                  <EpgCurrentButton
+                    title={epg.current.title}
+                    onPress={() => setShowDetail(true)}
+                  />
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <motion.button
-                type="button"
-                onClick={() => goToIndex(index - 1)}
+              <ChannelSkipButton
+                direction="prev"
                 disabled={index <= 0}
-                whileHover={index > 0 ? { scale: 1.1 } : undefined}
-                whileTap={index > 0 ? { scale: 0.9 } : undefined}
-                aria-label="Previous channel"
-                className="text-on-surface-variant hover:text-on-surface rounded-full p-3 outline-none transition-colors disabled:opacity-30"
-              >
-                <SkipBack size={24} fill="currentColor" />
-              </motion.button>
+                onClick={() => goToIndex(index - 1)}
+              />
               <motion.button
+                ref={playPauseRef}
                 type="button"
                 onClick={togglePlayPause}
                 whileHover={{ scale: 1.08 }}
@@ -223,22 +308,13 @@ export function PlayerPage() {
                   <Play size={30} fill="currentColor" />
                 )}
               </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => goToIndex(index + 1)}
+              <ChannelSkipButton
+                direction="next"
                 disabled={index >= channels.length - 1}
-                whileHover={
-                  index < channels.length - 1 ? { scale: 1.1 } : undefined
-                }
-                whileTap={
-                  index < channels.length - 1 ? { scale: 0.9 } : undefined
-                }
-                aria-label="Next channel"
-                className="text-on-surface-variant hover:text-on-surface rounded-full p-3 outline-none transition-colors disabled:opacity-30"
-              >
-                <SkipForward size={24} fill="currentColor" />
-              </motion.button>
+                onClick={() => goToIndex(index + 1)}
+              />
               <motion.button
+                ref={favoriteRef}
                 type="button"
                 onClick={() => toggleFavorite(currentChannel)}
                 whileTap={{ scale: 0.85 }}
@@ -273,14 +349,7 @@ export function PlayerPage() {
               className="border-outline-variant/30 bg-surface-container relative max-w-lg rounded-2xl border p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={() => setShowDetail(false)}
-                aria-label="Close"
-                className="text-on-surface-variant hover:text-on-surface absolute top-4 right-4 outline-none"
-              >
-                <X size={20} />
-              </button>
+              <EpgModalCloseButton onClose={() => setShowDetail(false)} />
               <p className="text-label-caps text-primary mb-1">
                 {formatTime(epg.current.start)} – {formatTime(epg.current.end)}
               </p>

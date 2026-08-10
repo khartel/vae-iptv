@@ -1,16 +1,47 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { ArrowLeft, Play, Clock } from 'lucide-react'
 import { useAsyncResource } from '../hooks/useAsyncResource'
+import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getVodInfo, buildVodStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+
+function ClosePlayerButton({ onClose }: { onClose: () => void }) {
+  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onClose })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClose}
+      aria-label="Close player"
+      className="text-on-background absolute top-6 left-6 z-10 rounded-full bg-black/50 p-2 backdrop-blur-md outline-none"
+    >
+      <ArrowLeft size={24} />
+    </button>
+  )
+}
 
 export function MovieDetailsPage() {
   const { vodId } = useParams<{ vodId: string }>()
   const navigate = useNavigate()
   const id = Number(vodId)
   const [showPlayer, setShowPlayer] = useState(false)
+  const { ref: playRef } = useFocusable<HTMLButtonElement>({
+    onEnterPress: () => setShowPlayer(true),
+  })
+  const { ref: backRef } = useFocusable<HTMLButtonElement>({
+    onEnterPress: () => navigate(-1),
+  })
+
+  useBackNavigation(() => {
+    if (showPlayer) {
+      setShowPlayer(false)
+      return true
+    }
+    return false
+  })
 
   const state = useAsyncResource(
     () => getVodInfo(id),
@@ -64,6 +95,7 @@ export function MovieDetailsPage() {
 
       <div className="pt-safe-margin-y px-safe-margin-x pb-safe-margin-y relative">
         <button
+          ref={backRef}
           type="button"
           onClick={() => navigate(-1)}
           className="text-on-surface-variant hover:text-on-surface mb-8 flex items-center gap-2 outline-none transition-colors"
@@ -98,6 +130,7 @@ export function MovieDetailsPage() {
             </div>
 
             <motion.button
+              ref={playRef}
               type="button"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -142,14 +175,7 @@ export function MovieDetailsPage() {
               src={streamUrl}
               className="relative h-full w-full bg-black"
             />
-            <button
-              type="button"
-              onClick={() => setShowPlayer(false)}
-              aria-label="Close player"
-              className="text-on-background absolute top-6 left-6 z-10 rounded-full bg-black/50 p-2 backdrop-blur-md outline-none"
-            >
-              <ArrowLeft size={24} />
-            </button>
+            <ClosePlayerButton onClose={() => setShowPlayer(false)} />
           </motion.div>
         )}
       </AnimatePresence>
