@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { ArrowLeft, Play, SkipBack, SkipForward } from 'lucide-react'
@@ -7,7 +7,18 @@ import { useAsyncResource } from '../hooks/useAsyncResource'
 import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getSeriesInfo, buildEpisodeStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+import {
+  getWatchProgress,
+  saveWatchProgress,
+  episodeProgressKey,
+} from '../lib/watchProgress'
 import type { XtreamEpisode } from '../types/xtream'
+
+interface SeriesDetailsLocationState {
+  resumeSeason?: number
+  resumeEpisodeIndex?: number
+  categoryId?: string
+}
 
 function SeasonTabButton({
   season,
@@ -128,9 +139,16 @@ function EpisodeRow({
 export function SeriesDetailsPage() {
   const { seriesId } = useParams<{ seriesId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const id = Number(seriesId)
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
-  const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+  const resumeState = location.state as SeriesDetailsLocationState | null
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(
+    resumeState?.resumeSeason ?? null,
+  )
+  const [playingIndex, setPlayingIndex] = useState<number | null>(
+    resumeState?.resumeEpisodeIndex ?? null,
+  )
+  const [categoryId] = useState(() => resumeState?.categoryId)
   const { ref: backRef } = useFocusable<HTMLButtonElement>({
     onEnterPress: () => navigate(-1),
   })
@@ -286,6 +304,26 @@ export function SeriesDetailsPage() {
             <VideoPlayer
               src={streamUrl}
               className="relative h-full w-full bg-black"
+              initialTime={
+                getWatchProgress(episodeProgressKey(playingEpisode.id))
+                  ?.positionSeconds
+              }
+              onProgress={(positionSeconds, durationSeconds) =>
+                saveWatchProgress({
+                  key: episodeProgressKey(playingEpisode.id),
+                  kind: 'episode',
+                  title: info.name,
+                  subtitle: `S${activeSeason} · E${playingEpisode.episode_num}`,
+                  posterUrl: playingEpisode.info.movie_image || info.cover,
+                  positionSeconds,
+                  durationSeconds,
+                  genre: info.genre,
+                  categoryId,
+                  seriesId: id,
+                  seasonNumber: activeSeason ?? undefined,
+                  episodeIndex: playingIndex ?? undefined,
+                })
+              }
             />
             <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
               <div className="from-background pointer-events-auto flex items-center gap-4 bg-gradient-to-b to-transparent p-6">

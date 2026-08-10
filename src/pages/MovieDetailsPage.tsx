@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { ArrowLeft, Play, Clock } from 'lucide-react'
@@ -7,6 +7,11 @@ import { useAsyncResource } from '../hooks/useAsyncResource'
 import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getVodInfo, buildVodStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+import {
+  getWatchProgress,
+  saveWatchProgress,
+  movieProgressKey,
+} from '../lib/watchProgress'
 
 function ClosePlayerButton({ onClose }: { onClose: () => void }) {
   const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onClose })
@@ -26,8 +31,11 @@ function ClosePlayerButton({ onClose }: { onClose: () => void }) {
 export function MovieDetailsPage() {
   const { vodId } = useParams<{ vodId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const id = Number(vodId)
-  const [showPlayer, setShowPlayer] = useState(false)
+  const autoplay = (location.state as { autoplay?: boolean } | null)?.autoplay
+  const [showPlayer, setShowPlayer] = useState(!!autoplay)
+  const [savedProgress] = useState(() => getWatchProgress(movieProgressKey(id)))
   const { ref: playRef } = useFocusable<HTMLButtonElement>({
     onEnterPress: () => setShowPlayer(true),
   })
@@ -138,7 +146,7 @@ export function MovieDetailsPage() {
               className="bg-primary text-on-primary mt-6 flex items-center gap-2 rounded-xl px-6 py-3 font-semibold shadow-[0_0_20px_rgba(192,193,255,0.25)] outline-none"
             >
               <Play size={20} fill="currentColor" />
-              Play
+              {savedProgress ? 'Resume' : 'Play'}
             </motion.button>
 
             {(info.plot || info.description) && (
@@ -174,6 +182,21 @@ export function MovieDetailsPage() {
             <VideoPlayer
               src={streamUrl}
               className="relative h-full w-full bg-black"
+              initialTime={savedProgress?.positionSeconds}
+              onProgress={(positionSeconds, durationSeconds) =>
+                saveWatchProgress({
+                  key: movieProgressKey(id),
+                  kind: 'movie',
+                  title: info.name,
+                  subtitle: year,
+                  posterUrl: poster,
+                  positionSeconds,
+                  durationSeconds,
+                  genre: info.genre,
+                  categoryId: movie_data.category_id,
+                  movieId: id,
+                })
+              }
             />
             <ClosePlayerButton onClose={() => setShowPlayer(false)} />
           </motion.div>

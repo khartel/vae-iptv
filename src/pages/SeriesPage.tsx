@@ -126,7 +126,11 @@ export function SeriesPage() {
                     posterUrl={series.cover}
                     subtitle={series.genre}
                     rating={series.rating_5based}
-                    onSelect={() => navigate(`/series/${series.series_id}`)}
+                    onSelect={() =>
+                      navigate(`/series/${series.series_id}`, {
+                        state: { categoryId: series.category_id },
+                      })
+                    }
                   />
                 ))}
               </motion.div>

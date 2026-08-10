@@ -12,6 +12,10 @@ interface VideoPlayerProps {
   className?: string
   controls?: boolean
   onPlayingChange?: (isPlaying: boolean) => void
+  /** Seek here once, as soon as the media's duration is known (resume). */
+  initialTime?: number
+  /** Fired at most every ~5s of playback — cheap enough to persist on every call. */
+  onProgress?: (currentTime: number, duration: number) => void
 }
 
 type PlayerStatus = 'loading' | 'playing' | 'error'
@@ -25,7 +29,14 @@ type PlayerStatus = 'loading' | 'playing' | 'error'
  */
 export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
   function VideoPlayer(
-    { src, className, controls = true, onPlayingChange },
+    {
+      src,
+      className,
+      controls = true,
+      onPlayingChange,
+      initialTime,
+      onProgress,
+    },
     forwardedRef,
   ) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -36,6 +47,8 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
 
     const [status, setStatus] = useState<PlayerStatus>('loading')
     const [errorMessage, setErrorMessage] = useState('')
+    const hasSeekedToInitialTime = useRef(false)
+    const lastProgressReportAt = useRef(0)
 
     useEffect(() => {
       const video = videoRef.current
@@ -43,6 +56,8 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
 
       setStatus('loading')
       setErrorMessage('')
+      hasSeekedToInitialTime.current = false
+      lastProgressReportAt.current = 0
 
       let hls: Hls | null = null
       // Only live channels are HLS (.m3u8). VOD movies/episodes are plain
@@ -92,11 +107,35 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
             setStatus('playing')
             onPlayingChange?.(true)
           }}
-          onPause={() => onPlayingChange?.(false)}
+          onPause={(e) => {
+            onPlayingChange?.(false)
+            const { currentTime, duration } = e.currentTarget
+            if (Number.isFinite(duration) && duration > 0) {
+              onProgress?.(currentTime, duration)
+            }
+          }}
           onWaiting={() => setStatus('loading')}
           onError={() => {
             setStatus('error')
             setErrorMessage('The video failed to load or play.')
+          }}
+          onLoadedMetadata={(e) => {
+            if (
+              initialTime &&
+              initialTime > 0 &&
+              !hasSeekedToInitialTime.current
+            ) {
+              hasSeekedToInitialTime.current = true
+              e.currentTarget.currentTime = initialTime
+            }
+          }}
+          onTimeUpdate={(e) => {
+            if (!onProgress) return
+            const { currentTime, duration } = e.currentTarget
+            if (!Number.isFinite(duration) || duration <= 0) return
+            if (currentTime - lastProgressReportAt.current < 5) return
+            lastProgressReportAt.current = currentTime
+            onProgress(currentTime, duration)
           }}
         />
         {status === 'loading' && (

@@ -8,6 +8,8 @@ interface PosterCardProps {
   subtitle?: string
   rating?: number
   onSelect: () => void
+  /** 0–1. When set, renders a resume progress bar and keeps the title visible without hover/focus (Continue Watching). */
+  progressRatio?: number
 }
 
 export function PosterCard({
@@ -16,7 +18,9 @@ export function PosterCard({
   subtitle,
   rating,
   onSelect,
+  progressRatio,
 }: PosterCardProps) {
+  const showInfoAlways = typeof progressRatio === 'number'
   const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onSelect })
 
   return (
@@ -52,10 +56,26 @@ export function PosterCard({
         </div>
       )}
 
-      <div className="group-focus-visible:opacity-100 absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/30 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <div
+        className={`absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/30 to-transparent p-3 transition-opacity duration-200 ${
+          showInfoAlways
+            ? 'opacity-100'
+            : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+        }`}
+      >
         <p className="truncate text-base font-bold text-white">{title}</p>
         {subtitle && (
           <p className="text-on-surface-variant truncate text-xs">{subtitle}</p>
+        )}
+        {showInfoAlways && (
+          <div className="bg-white/20 mt-2 h-1 w-full overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full"
+              style={{
+                width: `${Math.min(100, Math.max(0, progressRatio * 100))}%`,
+              }}
+            />
+          </div>
         )}
       </div>
     </motion.button>

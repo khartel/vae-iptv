@@ -11,6 +11,7 @@ import { MoviesPage } from './pages/MoviesPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
 import { SeriesPage } from './pages/SeriesPage'
 import { SeriesDetailsPage } from './pages/SeriesDetailsPage'
+import { SearchPage } from './pages/SearchPage'
 import { PlayerPage } from './pages/PlayerPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -51,6 +52,7 @@ function App() {
             <Route path="/movies/:vodId" element={<MovieDetailsPage />} />
             <Route path="/series" element={<SeriesPage />} />
             <Route path="/series/:seriesId" element={<SeriesDetailsPage />} />
+            <Route path="/search" element={<SearchPage />} />
           </Route>
           <Route
             path="/watch/:streamId"
