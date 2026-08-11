@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
 import logo from '../assets/logo-full.png'
 import { useAuth } from '../app/AuthContext'
 import { getEnvCredentials } from '../services/xtreamApi'
@@ -11,6 +11,7 @@ export function LoginPage() {
   const [serverUrl, setServerUrl] = useState(envDefaults.serverUrl)
   const [username, setUsername] = useState(envDefaults.username)
   const [password, setPassword] = useState(envDefaults.password)
+  const [showPassword, setShowPassword] = useState(false)
 
   const isLoading = state.status === 'loading'
 
@@ -41,6 +42,9 @@ export function LoginPage() {
           onSubmit={handleSubmit}
           className="bg-surface-container/70 border-outline-variant/30 flex flex-col gap-4 rounded-2xl border p-6 shadow-2xl backdrop-blur-xl"
         >
+          <h1 className="text-on-surface text-headline-md mb-1 text-center font-bold">
+            Enter Xtream Code Login
+          </h1>
           <div>
             <label
               htmlFor="serverUrl"
@@ -81,14 +85,24 @@ export function LoginPage() {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-surface-container-high text-on-surface border-outline-variant/30 focus:border-primary w-full rounded-lg border px-4 py-3 outline-none transition-colors"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-surface-container-high text-on-surface border-outline-variant/30 focus:border-primary w-full rounded-lg border px-4 py-3 pr-11 outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="text-on-surface-variant hover:text-on-surface absolute top-1/2 right-3 -translate-y-1/2 outline-none"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {state.status === 'unauthenticated' && state.error && (

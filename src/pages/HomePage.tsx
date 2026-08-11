@@ -15,15 +15,9 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../app/AuthContext'
-import { useLiveCategories } from '../hooks/useLiveCategories'
-import { useLiveStreams } from '../hooks/useLiveStreams'
-import { useFavorites } from '../hooks/useFavorites'
 import { useContinueWatching } from '../hooks/useContinueWatching'
 import { useRecommendations } from '../hooks/useRecommendations'
-import { ChannelCard } from '../components/ChannelCard'
 import { PosterCard } from '../components/PosterCard'
-
-const FEATURED_COUNT = 12
 
 function useClock() {
   const [now, setNow] = useState(() => new Date())
@@ -219,19 +213,6 @@ export function HomePage() {
   const userInfo =
     state.status === 'authenticated' ? state.data.user_info : null
 
-  const categoriesState = useLiveCategories()
-  const firstCategoryId =
-    categoriesState.status === 'success'
-      ? (categoriesState.categories[0]?.category_id ?? null)
-      : null
-  const streamsState = useLiveStreams(firstCategoryId)
-  const { isFavorite, toggleFavorite } = useFavorites()
-
-  const featured =
-    streamsState.status === 'success'
-      ? streamsState.streams.slice(0, FEATURED_COUNT)
-      : []
-
   const continueWatching = useContinueWatching()
   const recommendations = useRecommendations()
 
@@ -317,40 +298,6 @@ export function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="mt-section-gap">
-        <h2 className="text-headline-md mb-4">Live Now</h2>
-
-        {(categoriesState.status === 'loading' ||
-          streamsState.status === 'loading') && (
-          <p className="text-on-surface-variant">Loading channels…</p>
-        )}
-        {categoriesState.status === 'error' && (
-          <p className="text-error">{categoriesState.message}</p>
-        )}
-        {streamsState.status === 'error' && (
-          <p className="text-error">{streamsState.message}</p>
-        )}
-
-        {featured.length > 0 && (
-          <div className="gap-rail-item-spacing no-scrollbar flex overflow-x-auto pb-4">
-            {featured.map((channel, i) => (
-              <div key={channel.stream_id} className="w-[280px] shrink-0">
-                <ChannelCard
-                  channel={channel}
-                  isFavorite={isFavorite(channel.stream_id)}
-                  onSelect={() =>
-                    navigate(`/watch/${channel.stream_id}`, {
-                      state: { channels: featured, index: i },
-                    })
-                  }
-                  onToggleFavorite={() => toggleFavorite(channel)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       {recommendations.hasSignal &&
         recommendations.state.status === 'success' &&
