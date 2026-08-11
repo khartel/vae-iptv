@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './app/AuthContext'
 import { AppBackground } from './components/AppBackground'
 import { AppLayout } from './layouts/AppLayout'
@@ -36,7 +36,7 @@ function App() {
   return (
     <AuthProvider>
       <AppBackground />
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route
             element={
@@ -63,7 +63,7 @@ function App() {
             }
           />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   )
 }

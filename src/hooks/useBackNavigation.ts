@@ -17,7 +17,14 @@ export function useBackNavigation(onEscape?: () => boolean) {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
+      // 461 is the LG remote's hardware Back button (webOS delivers it as a
+      // plain keydown since appinfo.json sets disableBackHistoryAPI: true,
+      // rather than silently navigating browser history itself).
+      const isBack =
+        event.key === 'Escape' ||
+        event.key === 'GoBack' ||
+        event.keyCode === 461
+      if (!isBack) return
 
       const active = document.activeElement
       if (
