@@ -41,3 +41,21 @@ Package and run the existing React app as a real webOS TV application on the use
 ## Definition of done
 
 - The app runs on the real LG TV via Developer Mode, is fully navigable with the physical remote, and plays at least one authorized live channel successfully.
+
+## Status (2026-08-11): in progress — blocked on device pairing
+
+**Tooling**: `@webosose/ares-cli` (npm, v2.4.0) installed globally — `ares-package`, `ares-install`, `ares-launch`, `ares-inspect`, `ares-setup-device` all on PATH. No separate webOS SDK/IDE install was needed; the npm CLI package is self-contained.
+
+**App adapted for packaging** (the "genuinely TV-specific" changes, not a rewrite):
+
+- `BrowserRouter` → `HashRouter` in `src/App.tsx` — a packaged webOS app has no server to rewrite deep links back to `index.html`, so hash-based routing is the standard fix for embedded/file-served web apps.
+- `vite.config.ts` sets `base: './'` — the webOS app host doesn't serve `index.html` from a domain root, so absolute `/assets/...` URLs would 404 on-device even though they work fine from the Vite dev server.
+- `useBackNavigation` now also treats the LG remote's hardware Back button (keyCode 461 / `key === 'GoBack'`) the same as Escape. `webos-meta/appinfo.json` sets `"disableBackHistoryAPI": true` so webOS delivers Back as a plain keydown to the page instead of silently navigating browser history itself — confirming Phase 7's focus system needed no changes to handle it, just one more key alongside Escape in the same hook (per this phase's "if Phase 7 needs app logic changes, fix it at the root" instruction).
+- Added `webos-meta/appinfo.json` (id `com.vaeiptv.app`) plus `icon.png`/`largeIcon.png` generated from the existing favicon, and a `package:webos` npm script (`scripts/copy-webos-meta.mjs`) that builds, copies the manifest/icons into `dist/`, then runs `ares-package`.
+- `ares-package` required `--no-minify`: its bundled `uglify-js` (ES5-only parser) can't parse the modern syntax already present in Vite's own minified output, and failed with "Failed to minify code" until minification was skipped on its end.
+
+**Verified so far** (all without the TV): production build renders correctly and error-free when served standalone (`vite preview`) — confirms the router/base-path changes didn't break anything. `ares-package -I` confirms the produced `.ipk` has a valid manifest.
+
+**Blocked on**: pairing the CLI with the actual TV. `ares-setup-device` + `ares-install` currently fail with `All configured authentication methods failed` over SSH (port 9922, user `prisoner`) using the passphrase from the TV's Developer Mode → Key Server screen. One real bug already found and fixed along the way: the Developer Mode passphrase is an SSH **password** (`ares-setup-device`'s `password` field), not a key-decryption **passphrase** (a same-named but different field, only relevant when using `"auth_type": "ssh key"` with a local encrypted keyfile) — confirmed by reading `bin/ares-setup-device.js`'s interactive prompt logic. After correcting the field, auth still fails, so something else is wrong — candidates not yet ruled out: Dev Mode Status (the main toggle, separate from Key Server) not actually on, a mis-transcribed passphrase character, or the passphrase having rotated. Not yet resumed.
+
+**Not yet done**: actual device pairing, `ares-install`, `ares-launch`, on-device remote-control walkthrough, real playback verification on TV hardware, `ares-inspect` on-device debugging.
