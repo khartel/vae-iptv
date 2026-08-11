@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
@@ -7,6 +7,7 @@ import { useAsyncResource } from '../hooks/useAsyncResource'
 import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getSeriesInfo, buildEpisodeStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+import { PlayPauseButton } from '../components/PlayPauseButton'
 import {
   getWatchProgress,
   saveWatchProgress,
@@ -149,6 +150,14 @@ export function SeriesDetailsPage() {
     resumeState?.resumeEpisodeIndex ?? null,
   )
   const [categoryId] = useState(() => resumeState?.categoryId)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(true)
+  function togglePlayPause() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) video.play().catch(() => {})
+    else video.pause()
+  }
   const { ref: backRef } = useFocusable<HTMLButtonElement>({
     onEnterPress: () => navigate(-1),
   })
@@ -302,12 +311,14 @@ export function SeriesDetailsPage() {
             className="fixed inset-0 z-50 bg-black"
           >
             <VideoPlayer
+              ref={videoRef}
               src={streamUrl}
               className="relative h-full w-full bg-black"
               initialTime={
                 getWatchProgress(episodeProgressKey(playingEpisode.id))
                   ?.positionSeconds
               }
+              onPlayingChange={setIsPlaying}
               onProgress={(positionSeconds, durationSeconds) =>
                 saveWatchProgress({
                   key: episodeProgressKey(playingEpisode.id),
@@ -332,13 +343,17 @@ export function SeriesDetailsPage() {
                   {playingEpisode.episode_num}. {playingEpisode.title}
                 </span>
               </div>
-              <div className="pointer-events-auto flex justify-center gap-4 p-6">
+              <div className="pointer-events-auto flex items-center justify-center gap-4 p-6">
                 <EpisodeNavButton
                   direction="prev"
                   disabled={playingIndex === null || playingIndex <= 0}
                   onClick={() =>
                     setPlayingIndex((idx) => (idx !== null ? idx - 1 : null))
                   }
+                />
+                <PlayPauseButton
+                  isPlaying={isPlaying}
+                  onToggle={togglePlayPause}
                 />
                 <EpisodeNavButton
                   direction="next"

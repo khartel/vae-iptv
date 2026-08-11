@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
@@ -7,6 +7,7 @@ import { useAsyncResource } from '../hooks/useAsyncResource'
 import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getVodInfo, buildVodStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
+import { PlayPauseButton } from '../components/PlayPauseButton'
 import {
   getWatchProgress,
   saveWatchProgress,
@@ -36,6 +37,14 @@ export function MovieDetailsPage() {
   const autoplay = (location.state as { autoplay?: boolean } | null)?.autoplay
   const [showPlayer, setShowPlayer] = useState(!!autoplay)
   const [savedProgress] = useState(() => getWatchProgress(movieProgressKey(id)))
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(true)
+  function togglePlayPause() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) video.play().catch(() => {})
+    else video.pause()
+  }
   const { ref: playRef } = useFocusable<HTMLButtonElement>({
     onEnterPress: () => setShowPlayer(true),
   })
@@ -180,9 +189,11 @@ export function MovieDetailsPage() {
             className="fixed inset-0 z-50 bg-black"
           >
             <VideoPlayer
+              ref={videoRef}
               src={streamUrl}
               className="relative h-full w-full bg-black"
               initialTime={savedProgress?.positionSeconds}
+              onPlayingChange={setIsPlaying}
               onProgress={(positionSeconds, durationSeconds) =>
                 saveWatchProgress({
                   key: movieProgressKey(id),
@@ -199,6 +210,14 @@ export function MovieDetailsPage() {
               }
             />
             <ClosePlayerButton onClose={() => setShowPlayer(false)} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-8">
+              <div className="pointer-events-auto">
+                <PlayPauseButton
+                  isPlaying={isPlaying}
+                  onToggle={togglePlayPause}
+                />
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
