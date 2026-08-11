@@ -2,12 +2,12 @@ import { useRef, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { ArrowLeft, Play, SkipBack, SkipForward } from 'lucide-react'
+import { ArrowLeft, Play } from 'lucide-react'
 import { useAsyncResource } from '../hooks/useAsyncResource'
 import { useBackNavigation } from '../hooks/useBackNavigation'
 import { getSeriesInfo, buildEpisodeStreamUrl } from '../services/xtreamApi'
 import { VideoPlayer } from '../components/VideoPlayer'
-import { PlayPauseButton } from '../components/PlayPauseButton'
+import { VodPlayerChrome } from '../components/VodPlayerChrome'
 import {
   getWatchProgress,
   saveWatchProgress,
@@ -43,49 +43,6 @@ function SeasonTabButton({
       }`}
     >
       Season {season}
-    </button>
-  )
-}
-
-function ClosePlayerButton({ onClose }: { onClose: () => void }) {
-  const { ref } = useFocusable<HTMLButtonElement>({ onEnterPress: onClose })
-  return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onClose}
-      aria-label="Close player"
-      className="text-on-background rounded-full p-2 outline-none"
-    >
-      <ArrowLeft size={24} />
-    </button>
-  )
-}
-
-function EpisodeNavButton({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: 'prev' | 'next'
-  disabled: boolean
-  onClick: () => void
-}) {
-  const { ref } = useFocusable<HTMLButtonElement>({
-    focusable: !disabled,
-    onEnterPress: onClick,
-  })
-  const Icon = direction === 'prev' ? SkipBack : SkipForward
-  return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={direction === 'prev' ? 'Previous episode' : 'Next episode'}
-      className="text-on-surface-variant hover:text-on-surface rounded-full bg-black/50 p-3 outline-none backdrop-blur-md disabled:opacity-30"
-    >
-      <Icon size={22} fill="currentColor" />
     </button>
   )
 }
@@ -151,13 +108,7 @@ export function SeriesDetailsPage() {
   )
   const [categoryId] = useState(() => resumeState?.categoryId)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [isPlaying, setIsPlaying] = useState(true)
-  function togglePlayPause() {
-    const video = videoRef.current
-    if (!video) return
-    if (video.paused) video.play().catch(() => {})
-    else video.pause()
-  }
+  const containerRef = useRef<HTMLDivElement>(null)
   const { ref: backRef } = useFocusable<HTMLButtonElement>({
     onEnterPress: () => navigate(-1),
   })
@@ -305,6 +256,7 @@ export function SeriesDetailsPage() {
       <AnimatePresence>
         {playingEpisode && (
           <motion.div
+            ref={containerRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -313,12 +265,12 @@ export function SeriesDetailsPage() {
             <VideoPlayer
               ref={videoRef}
               src={streamUrl}
+              controls={false}
               className="relative h-full w-full bg-black"
               initialTime={
                 getWatchProgress(episodeProgressKey(playingEpisode.id))
                   ?.positionSeconds
               }
-              onPlayingChange={setIsPlaying}
               onProgress={(positionSeconds, durationSeconds) =>
                 saveWatchProgress({
                   key: episodeProgressKey(playingEpisode.id),
@@ -336,41 +288,27 @@ export function SeriesDetailsPage() {
                 })
               }
             />
-            <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
-              <div className="from-background pointer-events-auto flex items-center gap-4 bg-gradient-to-b to-transparent p-6">
-                <ClosePlayerButton onClose={() => setPlayingIndex(null)} />
-                <span className="font-semibold">
-                  {playingEpisode.episode_num}. {playingEpisode.title}
-                </span>
-              </div>
-              <div className="pointer-events-auto flex items-center justify-center gap-4 p-6">
-                <EpisodeNavButton
-                  direction="prev"
-                  disabled={playingIndex === null || playingIndex <= 0}
-                  onClick={() =>
-                    setPlayingIndex((idx) => (idx !== null ? idx - 1 : null))
-                  }
-                />
-                <PlayPauseButton
-                  isPlaying={isPlaying}
-                  onToggle={togglePlayPause}
-                />
-                <EpisodeNavButton
-                  direction="next"
-                  disabled={
-                    playingIndex === null ||
-                    playingIndex >= activeEpisodes.length - 1
-                  }
-                  onClick={() =>
-                    setPlayingIndex((idx) =>
-                      idx !== null && idx < activeEpisodes.length - 1
-                        ? idx + 1
-                        : idx,
-                    )
-                  }
-                />
-              </div>
-            </div>
+            <VodPlayerChrome
+              videoRef={videoRef}
+              containerRef={containerRef}
+              title={`${playingEpisode.episode_num}. ${playingEpisode.title}`}
+              subtitle={`${info.name} · S${activeSeason}`}
+              onClose={() => setPlayingIndex(null)}
+              episodeNav={{
+                prevDisabled: playingIndex === null || playingIndex <= 0,
+                onPrev: () =>
+                  setPlayingIndex((idx) => (idx !== null ? idx - 1 : null)),
+                nextDisabled:
+                  playingIndex === null ||
+                  playingIndex >= activeEpisodes.length - 1,
+                onNext: () =>
+                  setPlayingIndex((idx) =>
+                    idx !== null && idx < activeEpisodes.length - 1
+                      ? idx + 1
+                      : idx,
+                  ),
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
